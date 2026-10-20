@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pancake Job</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one-screen kitchen stage. Landscape: scene left, goal card + check right, three color-coded panels along the bottom, each holding its request slot with its own tiles underneath. Portrait stacks them. Single committed light look (a kid's kitchen), colors set explicitly. */
+:root{
+  --wall:#cfe7fb; --wall-line:#b9daf4; --counter:#e2a05c; --counter-edge:#b8773a;
+  --ink:#1f2d47; --ink-soft:#4d5d7a; --paper:#ffffff; --panel:#f3f8fd;
+  --pip:#6a4cf0; --pip-dark:#4b31c4; --pip-belly:#b0a2ff; --bulb:#ffd23f; --bulb-off:#9c94b8;
+  --cake:#eaa94e; --cake-edge:#bd772c; --cake-top:#f5c77e;
+  --c-count:#2a78dc; --c-size:#e9821f; --c-top:#dc4a86;
+  --good:#23985a; --focus:#ffbf1f;
+  --font-display:ui-rounded,"SF Pro Rounded","Arial Rounded MT Bold","Trebuchet MS","Segoe UI",system-ui,sans-serif;
+  color-scheme:light;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--wall);color:var(--ink);font-family:var(--font-display);overflow-x:hidden;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+button:focus-visible{outline:4px solid var(--focus);outline-offset:3px}
+#app{box-sizing:border-box;min-height:100%;display:grid;gap:10px;
+  grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);
+  grid-template-rows:auto minmax(230px,1fr) auto;
+  grid-template-areas:"top top" "scene side" "ask ask";
+  padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+@media (max-aspect-ratio:1/1){
+  #app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(240px,1fr) auto;grid-template-areas:"top" "side" "scene" "ask"}
+
+}
+/* top bar */
+#top{grid-area:top;display:flex;align-items:center;gap:10px}
+#progress{display:flex;gap:8px;margin-right:auto}
+.dot{width:18px;height:18px;border-radius:50%;background:var(--paper);border:3px solid var(--pip)}
+.dot.done{background:var(--pip)}
+.icon-btn{min-width:64px;height:64px;border-radius:16px;border:0;background:var(--paper);display:grid;place-items:center;box-shadow:0 3px 0 var(--wall-line)}
+.icon-btn svg{width:30px;height:30px}
+.icon-btn[disabled]{opacity:.45}
+#grownups{min-width:auto;padding:0 12px;font-size:13px;font-weight:700;color:var(--ink-soft);position:relative;overflow:hidden}
+#grownups .fill{position:absolute;inset:auto 0 0 0;height:4px;background:var(--pip);transform:scaleX(0);transform-origin:left}
+#grownups.holding .fill{transform:scaleX(1);transition:transform 2s linear}
+/* scene */
+#scene{grid-area:scene;position:relative;overflow:hidden;border-radius:22px;min-height:230px;
+  background:repeating-linear-gradient(90deg,transparent 0 46px,var(--wall-line) 46px 48px),repeating-linear-gradient(0deg,var(--wall) 0 46px,var(--wall-line) 46px 48px)}
+#counter{position:absolute;left:0;right:0;bottom:0;height:22%;background:var(--counter);border-top:8px solid var(--counter-edge)}
+#pip{position:absolute;left:3%;bottom:12%;width:clamp(110px,27%,230px);border:0;background:none;padding:0;transform-origin:50% 100%}
+#pip svg{width:100%;height:auto;display:block;overflow:visible}
+#plate-wrap{position:absolute;right:3%;bottom:9%;width:58%;height:88%;display:flex;align-items:flex-end;justify-content:center;font-size:clamp(8px,1.25vw,15px)}
+#bubble{position:absolute;left:3%;top:3%;max-width:min(560px,92%);background:var(--paper);border-radius:22px;padding:10px 16px;font-size:clamp(16px,2vw,22px);font-weight:700;line-height:1.25;box-shadow:0 4px 0 var(--wall-line);z-index:5}
+#bubble.thought{border:3px dashed var(--pip);background:#f6f3ff}
+#bubble:empty{display:none}
+#bubble .minirow{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+#bubble .mini{display:flex;align-items:flex-end;justify-content:center;font-size:5px;height:12em;width:19em;background:var(--panel);border-radius:12px;padding:3px}
+#bubble .skip{margin-top:8px;min-height:64px;min-width:130px;border-radius:32px;border:0;background:var(--pip);color:#fff;font-size:20px;font-weight:800;box-shadow:0 4px 0 var(--pip-dark)}
+/* side */
+#side{grid-area:side;display:flex;flex-direction:column;gap:10px;min-width:0}
+#goal{background:var(--paper);border-radius:22px;padding:10px 12px;display:flex;flex-direction:column;align-items:center;gap:4px;border:0;box-shadow:0 4px 0 var(--wall-line);min-height:150px}
+#goal .label{font-size:14px;font-weight:700;color:var(--ink-soft);letter-spacing:.04em;text-transform:uppercase}
+#goal .pic{font-size:clamp(8px,1.25vw,15px);flex:1;min-height:9em;width:100%;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;padding-bottom:.6em}
+#goal.compare,#plate-wrap.compare{animation:pulse 1s ease-in-out 2}
+#action{display:flex;align-items:center;justify-content:center;min-width:170px}
+#check{display:flex;flex-direction:column;gap:8px;justify-content:center;align-items:center;background:var(--paper);border-radius:22px;padding:10px 12px;box-shadow:0 4px 0 var(--wall-line)}
+#check .row2{display:flex;gap:14px}
+#check .q{font-size:17px;font-weight:800;color:var(--ink)}
+.thumb{width:84px;height:84px;border-radius:50%;border:0;display:grid;place-items:center;background:var(--paper);box-shadow:0 5px 0 var(--wall-line)}
+.thumb svg{width:50px;height:50px}
+.thumb:active{transform:translateY(3px);box-shadow:0 2px 0 var(--wall-line)}
+/* ask row */
+#ask{grid-area:ask;display:flex;gap:12px;align-items:stretch;justify-content:center;flex-wrap:wrap}
+.panel{display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:8px;border-radius:22px;background:color-mix(in srgb,var(--cat) 16%,var(--paper));border:3px solid color-mix(in srgb,var(--cat) 45%,var(--paper))}
+.tiles{display:grid;gap:8px;grid-template-columns:repeat(var(--cols),auto);justify-content:center}
+.tiles{--cols:2}
+.hl{animation:pulse 1s ease-in-out 2}
+.slot{width:100%;box-sizing:border-box;min-height:84px;border-radius:20px;background:var(--paper);border:4px dashed var(--cat);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px}
+.slot.filled{border-style:solid}
+.slot .cap{font-size:13px;font-weight:700;color:var(--cat);text-transform:uppercase;letter-spacing:.05em}
+.slot .q{font-size:38px;font-weight:800;color:var(--cat);line-height:1}
+.slot.glow{animation:glow 1s ease-in-out infinite}
+#askbtn{min-width:160px;min-height:104px;align-self:center;border-radius:24px;border:0;background:var(--pip);color:#fff;font-size:24px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 0 var(--pip-dark);padding:0 18px}
+#askbtn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--pip-dark)}
+#askbtn[disabled]{opacity:.5}
+#app.locked .tiles,#app.locked .slot{opacity:.55}
+#askbtn svg{width:46px;height:46px}
+/* tiles */
+.tile{width:80px;min-height:72px;border-radius:16px;border:3px solid var(--cat);background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 2px;box-shadow:0 4px 0 color-mix(in srgb,var(--cat) 45%,var(--paper))}
+.tile:active{transform:translateY(3px);box-shadow:0 1px 0 color-mix(in srgb,var(--cat) 45%,var(--paper))}
+.tile.on{background:color-mix(in srgb,var(--cat) 22%,var(--paper))}
+.tile.wiggle{animation:wiggle .6s ease-in-out infinite}
+.tile .w,.slot .w{font-size:14px;font-weight:700;line-height:1.05;text-align:center}
+.ic{width:44px;height:36px;display:block}
+.num{font-size:44px;font-weight:800;line-height:1;color:var(--c-count);font-variant-numeric:tabular-nums}
+.panel.wrong{border-color:#d64545;animation:redpulse 1s ease-in-out infinite}
+@keyframes redpulse{0%,100%{box-shadow:0 0 0 0 rgba(214,69,69,0)}50%{box-shadow:0 0 0 9px rgba(214,69,69,.5)}}
+@media (max-height:760px){.tile{width:72px;min-height:64px}.ic{width:38px;height:30px}.slot{min-height:70px}.tile .w,.slot .w{font-size:13px}.slot .cap{font-size:11px}}
+.cat-count{--cat:var(--c-count)} .cat-size{--cat:var(--c-size)} .cat-top{--cat:var(--c-top)}
+/* pancakes */
+.stack{display:flex;flex-direction:column-reverse;align-items:center;position:relative;transform-origin:20% 100%}
+.plate{width:16em;height:2.2em;border-radius:50%;background:var(--paper);border:.25em solid #d6e2ee;margin-top:-1.1em;flex:none;position:relative;z-index:0}
+.cake,.tops{position:relative;z-index:1}
+.cake{border-radius:50%;background:radial-gradient(ellipse at 50% 30%,var(--cake-top),var(--cake) 60%);border-bottom:.35em solid var(--cake-edge);flex:none;margin-bottom:-.55em;animation:drop .25s ease-out}
+
+.cake.small{width:8em;height:1.7em}
+.cake.big{width:13em;height:2.3em}
+.cake.half{width:13em;height:2.3em;-webkit-mask:radial-gradient(circle at 94% 35%,transparent 1.5em,#000 1.55em);mask:radial-gradient(circle at 94% 35%,transparent 1.5em,#000 1.55em)}
+.cake.muffin{width:6em;height:4.6em;border-radius:46% 46% 14% 14%/62% 62% 14% 14%;background:linear-gradient(#8b5a2b 0 54%,#e2508a 54%);border-bottom:0;margin-bottom:-.15em}
+
+.cake.giant{width:44em;height:6em;border-bottom-width:.9em}
+.tops{display:flex;gap:.2em;align-items:flex-end;justify-content:center;margin-bottom:-.6em;position:relative;z-index:2;flex-wrap:nowrap}
+.tops svg{width:3em;height:3em;animation:drop .3s ease-out}
+.stack.wobble{animation:wobble .6s ease-in-out 2}
+.stack.topple{animation:topple 1.1s ease-in forwards}
+.stack.grow .cake.giant{animation:grow 1.4s ease-out}
+/* pip moods */
+.e{display:none}
+.m-sleep .e-sleep,.m-wide .e-wide,.m-happy .e-happy,.m-oops .e-oops,.m-think .e-think{display:inline}
+.m-sleep .bulb{fill:var(--bulb-off)}
+#pip.jump{animation:jump .7s ease-out}
+#pip.spin{animation:spin .8s ease-in-out}
+#pip.flop{animation:flop 1s ease-in-out}
+#pip.shake{animation:shake .5s ease-in-out 2}
+#pip.bounce{animation:bounce .5s ease-in-out 2}
+#zzz{position:absolute;left:calc(3% + clamp(110px,27%,230px) - 20px);bottom:62%;font-size:28px;font-weight:800;color:var(--pip);animation:zz 2s ease-in-out infinite}
+/* overlays */
+.overlay{position:fixed;inset:0;background:rgba(31,45,71,.55);display:grid;place-items:center;z-index:20;padding:16px}
+.card{background:var(--paper);border-radius:28px;padding:24px;max-width:min(720px,100%);max-height:90vh;overflow:auto;box-sizing:border-box;text-align:center}
+.card h1{font-size:clamp(34px,6vw,58px);margin:0;color:var(--pip);line-height:1}
+.card p{color:var(--ink-soft);margin:8px 0 16px;font-size:16px}
+.big-btn{min-width:200px;min-height:88px;border-radius:44px;border:0;background:var(--pip);color:#fff;font-size:28px;font-weight:800;box-shadow:0 6px 0 var(--pip-dark);display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:0 28px}
+.big-btn svg{width:40px;height:40px}
+#shelf{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:12px 0 20px}
+#shelf .item{font-size:5px;width:20em;height:15em;display:flex;align-items:flex-end;justify-content:center;background:var(--panel);border-radius:16px;padding:6px}
+#adult .card{text-align:left;font-family:system-ui,"Segoe UI",sans-serif}
+#adult h2{margin:0 0 4px;font-size:22px}
+#adult table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+#adult th,#adult td{border-bottom:1px solid #dde6ef;padding:6px 6px;text-align:left;vertical-align:top}
+#adult .tbl{overflow-x:auto;margin:10px 0}
+#adult .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+#adult .row button{min-height:48px;border-radius:12px;border:2px solid var(--ink-soft);background:var(--paper);padding:0 16px;font-size:15px;font-weight:600}
+#adult .row button.danger{border-color:#c0392b;color:#c0392b}
+#adult .sum{font-size:15px;margin:6px 0}
+@keyframes drop{from{transform:translateY(-1.5em);opacity:0}to{transform:none;opacity:1}}
+@keyframes wobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+@keyframes topple{0%{transform:rotate(0)}30%{transform:rotate(-8deg)}100%{transform:rotate(24deg)}}
+@keyframes grow{from{transform:scale(.2)}to{transform:scale(1)}}
+@keyframes jump{0%,100%{transform:none}40%{transform:translateY(-30%) scale(1.05,.95)}}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes flop{0%,100%{transform:none}35%,65%{transform:rotate(-80deg)}}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-6%)}75%{transform:translateX(6%)}}
+@keyframes bounce{0%,100%{transform:none}50%{transform:translateY(-10%)}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 var(--focus)}50%{box-shadow:0 0 0 10px var(--focus)}}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 var(--focus)}50%{box-shadow:0 0 0 12px var(--focus)}}
+@keyframes zz{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(-12px);opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <div id="progress" aria-label="Rounds"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+    <button class="icon-btn" id="replay" aria-label="Say it again"><svg viewBox="0 0 32 32"><path d="M24 11a10 10 0 1 0 2 9" stroke="#1f2d47" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M19 4l8 6-9 4z" fill="#1f2d47"/></svg></button>
+    <button class="icon-btn" id="mute" aria-label="Sound off" aria-pressed="false"><svg viewBox="0 0 32 32"><path d="M6 12h5l7-6v20l-7-6H6z" fill="#1f2d47"/><path id="mute-w" d="M22 11a7 7 0 0 1 0 10" stroke="#1f2d47" stroke-width="2.5" fill="none" stroke-linecap="round"/><g id="mute-x" stroke="#d64545" stroke-width="3" stroke-linecap="round" style="display:none"><path d="M22 12l7 8M29 12l-7 8"/></g></svg></button>
+    <button class="icon-btn" id="grownups" aria-label="Grown-ups: press and hold">Grown-ups<span class="fill"></span></button>
+  </div>
+
+  <div id="scene">
+    <div id="counter"></div>
+    <div id="plate-wrap"></div>
+    <button id="pip" aria-label="Pip" class="m-sleep">
+      <svg viewBox="0 0 200 230" aria-hidden="true">
+        <path d="M100 40 Q104 18 118 12" stroke="#4b31c4" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <circle class="bulb" cx="120" cy="11" r="10" fill="#ffd23f"/>
+        <ellipse cx="72" cy="214" rx="22" ry="10" fill="#4b31c4"/>
+        <ellipse cx="128" cy="214" rx="22" ry="10" fill="#4b31c4"/>
+        <ellipse cx="28" cy="140" rx="12" ry="22" fill="#6a4cf0" transform="rotate(20 28 140)"/>
+        <ellipse cx="172" cy="140" rx="12" ry="22" fill="#6a4cf0" transform="rotate(-20 172 140)"/>
+        <path d="M44 206 Q20 206 26 132 Q34 44 100 40 Q166 44 174 132 Q180 206 156 206 Z" fill="#6a4cf0"/>
+        <ellipse cx="100" cy="160" rx="46" ry="36" fill="#b0a2ff"/>
+        <!-- third eye: the species' signature -->
+        <g class="e e-wide e-happy e-oops e-think"><circle cx="100" cy="70" r="8" fill="#fff"/><circle cx="100" cy="71" r="4" fill="#1f2d47"/></g>
+        <g class="e e-sleep"><path d="M93 70 Q100 75 107 70" stroke="#1f2d47" stroke-width="3" fill="none" stroke-linecap="round"/></g>
+        <!-- sleep -->
+        <g class="e e-sleep" stroke="#1f2d47" stroke-width="4" fill="none" stroke-linecap="round"><path d="M60 104 Q72 112 84 104"/><path d="M116 104 Q128 112 140 104"/><ellipse cx="100" cy="134" rx="7" ry="5" fill="#1f2d47"/></g>
+        <!-- wide (surprised) -->
+        <g class="e e-wide"><ellipse cx="72" cy="102" rx="17" ry="21" fill="#fff"/><ellipse cx="128" cy="102" rx="17" ry="21" fill="#fff"/><circle cx="72" cy="104" r="7" fill="#1f2d47"/><circle cx="128" cy="104" r="7" fill="#1f2d47"/><ellipse cx="100" cy="138" rx="11" ry="13" fill="#1f2d47"/></g>
+        <!-- happy -->
+        <g class="e e-happy"><ellipse cx="72" cy="102" rx="15" ry="18" fill="#fff"/><ellipse cx="128" cy="102" rx="15" ry="18" fill="#fff"/><circle cx="74" cy="104" r="8" fill="#1f2d47"/><circle cx="130" cy="104" r="8" fill="#1f2d47"/><circle cx="77" cy="100" r="2.5" fill="#fff"/><circle cx="133" cy="100" r="2.5" fill="#fff"/><path d="M80 130 Q100 150 120 130" stroke="#1f2d47" stroke-width="5" fill="#ff8fb1" stroke-linecap="round"/></g>
+        <!-- oops (embarrassed) -->
+        <g class="e e-oops"><ellipse cx="72" cy="102" rx="15" ry="18" fill="#fff"/><ellipse cx="128" cy="102" rx="15" ry="18" fill="#fff"/><circle cx="70" cy="108" r="7" fill="#1f2d47"/><circle cx="126" cy="108" r="7" fill="#1f2d47"/><ellipse cx="56" cy="128" rx="10" ry="6" fill="#ff8fb1"/><ellipse cx="144" cy="128" rx="10" ry="6" fill="#ff8fb1"/><path d="M84 138 Q92 132 100 138 Q108 144 116 138" stroke="#1f2d47" stroke-width="4" fill="none" stroke-linecap="round"/></g>
+        <!-- think -->
+        <g class="e e-think"><ellipse cx="72" cy="102" rx="15" ry="18" fill="#fff"/><ellipse cx="128" cy="102" rx="15" ry="18" fill="#fff"/><circle cx="78" cy="96" r="7" fill="#1f2d47"/><circle cx="134" cy="96" r="7" fill="#1f2d47"/><path d="M88 136 L114 132" stroke="#1f2d47" stroke-width="4" stroke-linecap="round"/></g>
+      </svg>
+    </button>
+    <div id="zzz" aria-hidden="true">z z Z</div>
+    <div id="bubble" role="status" aria-live="polite"></div>
+  </div>
+
+  <div id="side">
+    <div id="goal" aria-label="Make this">
+      <span class="label">Make this</span>
+      <div class="pic" id="goal-pic"></div>
+    </div>
+  </div>
+
+  <div id="ask">
+    <div class="panel cat-count" id="panel-count"><button class="slot cat-count" data-cat="count" id="slot-count"></button><div class="tiles" id="tiles-count"></div></div>
+    <div class="panel cat-size" id="panel-size"><button class="slot cat-size" data-cat="size" id="slot-size"></button><div class="tiles" id="tiles-size"></div></div>
+    <div class="panel cat-top" id="panel-top"><button class="slot cat-top" data-cat="top" id="slot-top"></button><div class="tiles" id="tiles-top"></div></div>
+    <div id="action">
+      <button id="askbtn" aria-label="Start cooking"><svg viewBox="0 0 46 46"><ellipse cx="20" cy="26" rx="16" ry="9" fill="#fff"/><rect x="33" y="23" width="12" height="5" rx="2.5" fill="#fff"/><ellipse cx="20" cy="24" rx="9" ry="4" fill="#eaa94e"/><path d="M14 10q3-4 0-8M21 10q3-4 0-8M28 10q3-4 0-8" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>Start cooking!</button>
+      <div id="check" hidden>
+        <span class="q">Did Pip get it right?</span>
+        <div class="row2">
+          <button class="thumb" id="up" aria-label="Yes, right"><svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="24" fill="#23985a"/><path d="M15 25l7 7 13-14" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button class="thumb" id="down" aria-label="No, not right"><svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="24" fill="#d64545"/><path d="M17 17l16 16M33 17L17 33" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="start">
+  <div class="card">
+    <h1>Pancake Job</h1>
+    <p>Pip talks out loud, so turn the sound on.</p>
+    <button class="big-btn" id="startbtn" aria-label="Start"><svg viewBox="0 0 40 40"><path d="M12 6l22 14-22 14z" fill="#fff"/></svg>Play</button>
+  </div>
+</div>
+
+<div class="overlay" id="end" hidden>
+  <div class="card">
+    <h1>Yum!</h1>
+    <p>Everything you made with Pip</p>
+    <div id="shelf"></div>
+    <button class="big-btn" id="again" aria-label="Play again"><svg viewBox="0 0 40 40"><path d="M30 12a12 12 0 1 0 3 10" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M24 4l9 8-11 3z" fill="#fff"/></svg>Again</button>
+  </div>
+</div>
+
+<div class="overlay" id="adult" hidden>
+  <div class="card">
+    <h2>For grown-ups</h2>
+    <p style="margin:0 0 6px">This is a test build. Pip's words and mistakes are pre-written. No live SI (AI model) runs, and nothing leaves this device. The log below is saved only in this browser.</p>
+    <div class="sum" id="adult-sum"></div>
+    <div class="tbl" id="adult-tbl"></div>
+    <div class="row"><button id="adult-close">Close</button><button class="danger" id="adult-reset">Erase all data</button></div>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+const FAST = !!window.__FAST;
+const wait = ms => new Promise(r => setTimeout(r, FAST ? 1 : ms));
+const $ = id => document.getElementById(id);
+
+/* ---------- content ---------- */
+const ROUNDS = [
+  { count: 4, size: "small", top: "banana" },
+  { count: 2, size: "big", top: "strawberry", cw: true },
+  { count: 8, size: "small", top: "plain" }
+];
+const TILES = {
+  count: [2, 4, 8, "lots"],
+  size: ["small", "big", "muffin", "half"],
+  top: ["banana", "strawberry", "plain", "yummy"]
+};
+const CAPS = { count: "how many", size: "size", top: "on top" };
+const WORD = v => ({ lots: "lots", yummy: "yummy stuff", small: "small", big: "big", muffin: "muffin", half: "bitten", banana: "banana", strawberry: "strawberry", plain: "plain" }[v] ?? String(v));
+const NUMW = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight"];
+const WAKE = [
+  { anim: "jump", line: "WAAAH! A pancake monster! Oh. It's you!" },
+  { anim: "bounce", line: "Hic! I was dreaming about syrup. Hic!" },
+  { anim: "spin", line: "Who turned on the morning?!" },
+  { anim: "flop", line: "Whoa! I fell right out of my dream!" },
+  { anim: "shake", line: "I wasn't sleeping! I was testing my eyelids." }
+];
+
+/* ---------- storage (defensive) ---------- */
+const KEY = "pancakeJob.v1";
+let mem = { shelf: [], log: [], lastWake: -1 };
+function load() { try { const raw = localStorage.getItem(KEY); if (raw) mem = Object.assign(mem, JSON.parse(raw)); } catch (e) {} }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(mem)); } catch (e) {} }
+
+/* ---------- state ---------- */
+const S = { phase: "start", busy: false, muted: false, round: 0, req: { count: null, size: null, top: null },
+  cwUsed: false, failsBySlot: {}, log: null, lastLine: "", idle: null, cooked: null, glowCat: null, wiggle: null };
+
+/* ---------- speech ---------- */
+const synth = ("speechSynthesis" in window) ? window.speechSynthesis : null;
+function say(text, opts = {}) {
+  S.lastLine = text;
+  const b = $("bubble");
+  b.className = opts.thought ? "thought" : "";
+  b.textContent = text;
+  if (opts.extra) b.appendChild(opts.extra);
+  return voice(text);
+}
+function voice(text) {
+  const est = Math.min(9000, 500 + text.length * 62);
+  if (FAST) return Promise.resolve();
+  return new Promise(resolve => {
+    let done = false; const fin = () => { if (!done) { done = true; resolve(); } };
+    S.cut = fin;
+    if (S.muted || !synth) { setTimeout(fin, Math.max(900, est * 0.7)); return; }
+    try {
+      synth.cancel();
+      const u = new SpeechSynthesisUtterance(text.replace(/[!?]{2,}/g, "!"));
+      u.rate = 1.05; u.pitch = 1.25; u.onend = fin; u.onerror = fin;
+      synth.speak(u);
+    } catch (e) { fin(); }
+    setTimeout(fin, est + 1500);
+  });
+}
+function quickWord(text) { if (!FAST && !S.muted && synth) { try { synth.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = 1; u.pitch = 1.3; synth.speak(u); } catch (e) {} } }
+
+/* ---------- drawing ---------- */
+const ICON = {
+  banana: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#fff3b0" stroke="#e8c64a" stroke-width="2"/><circle cx="9" cy="10" r="1.2" fill="#8a6d1d"/><circle cx="14" cy="9" r="1.2" fill="#8a6d1d"/><circle cx="12" cy="14" r="1.2" fill="#8a6d1d"/></svg>',
+  strawberry: '<svg viewBox="0 0 24 24"><path d="M12 22C5 16 3 11 6 8c2-2 4-1 6 0 2-1 4-2 6 0 3 3 1 8-6 14z" fill="#e2384c"/><path d="M8 6c2 1 3 1 4 0 1 1 2 1 4 0l-2-3h-4z" fill="#3bab4f"/><circle cx="10" cy="12" r=".9" fill="#ffe08a"/><circle cx="14" cy="11" r=".9" fill="#ffe08a"/><circle cx="12" cy="16" r=".9" fill="#ffe08a"/></svg>',
+  pickles: '<svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="5" fill="#6aa83a" stroke="#3f7a1f" stroke-width="1.5"/><circle cx="8" cy="11" r="1" fill="#c8e6a0"/><circle cx="13" cy="13" r="1" fill="#c8e6a0"/><circle cx="17" cy="10" r="1" fill="#c8e6a0"/></svg>',
+  sock: '<svg viewBox="0 0 24 24"><path d="M8 2h8v10l-1 5a5 5 0 0 1-5 4H6a3 3 0 0 1 0-6h2z" fill="#f05d8f"/><rect x="8" y="2" width="8" height="3" fill="#fff"/><rect x="8" y="7" width="8" height="2" fill="#fff"/></svg>'
+};
+function topIcons(top) {
+  if (top === "banana") return [ICON.banana];
+  if (top === "strawberry") return [ICON.strawberry];
+  if (top === "pickles") return [ICON.pickles];
+  if (top === "everything") return [ICON.banana, ICON.strawberry, ICON.pickles, ICON.sock];
+  return [];
+}
+function makeStack(o, opts = {}) {
+  const st = document.createElement("div"); st.className = "stack";
+  const plate = document.createElement("div"); plate.className = "plate"; st.appendChild(plate);
+  if (!opts.empty) { for (let i = 0; i < o.count; i++) addCake(st, o.size, true); addTops(st, o.top, true); }
+  return st;
+}
+function addCake(st, size, still) { const c = document.createElement("div"); c.className = "cake " + size; if (still) c.style.animation = "none"; const t = st.querySelector(".tops"); st.insertBefore(c, t || null); return c; }
+function addTops(st, top, still) { const old = st.querySelector(".tops"); if (old) old.remove(); const t = document.createElement("div"); t.className = "tops"; t.innerHTML = topIcons(top).join(""); if (still) t.querySelectorAll("svg").forEach(s => s.style.animation = "none"); st.appendChild(t); return t; }
+
+const isNum = (cat, v) => cat === "count" && v !== "lots";
+function tileIcon(cat, v) {
+  if (cat === "count") {
+    if (v === "lots") { let s = '<svg class="ic" viewBox="0 0 46 40">'; for (let i = 0; i < 18; i++) s += `<circle cx="${6 + (i % 6) * 6.8 + (Math.floor(i / 6) % 2) * 3}" cy="${8 + Math.floor(i / 6) * 12}" r="3" fill="#2a78dc"/>`; return s + "</svg>"; }
+    return `<span class="num">${v}</span>`;
+  }
+  if (cat === "size") {
+    const plate = '<ellipse cx="23" cy="30" rx="21" ry="6" fill="#fff" stroke="#c9d6e3" stroke-width="1.5"/>';
+    if (v === "muffin") return `<svg class="ic" viewBox="0 0 46 40">${plate}<path d="M14 25 L17 35 H29 L32 25 Z" fill="#e2508a"/><path d="M12 26 Q12 10 23 10 Q34 10 34 26 Z" fill="#8b5a2b"/><circle cx="19" cy="18" r="1.6" fill="#3d2410"/><circle cx="27" cy="16" r="1.6" fill="#3d2410"/><circle cx="24" cy="22" r="1.6" fill="#3d2410"/></svg>`;
+    const rx = v === "small" ? 10.5 : 17.5, ry = v === "small" ? 4 : 5.5;
+    let svg = `<svg class="ic" viewBox="0 0 46 40">${plate}<ellipse cx="23" cy="27" rx="${rx}" ry="${ry}" fill="#eaa94e" stroke="#bd772c" stroke-width="2"/>`;
+    if (v === "half") svg += '<circle cx="39" cy="24" r="6" fill="#fff"/><circle cx="35" cy="31" r="4.5" fill="#fff"/>';
+    return svg + "</svg>";
+  }
+  if (v === "plain") return '<svg class="ic" viewBox="0 0 46 40"><circle cx="23" cy="20" r="14" fill="none" stroke="#dc4a86" stroke-width="3" stroke-dasharray="5 4"/></svg>';
+  const inner2 = (p, x, y, k) => `<g transform="translate(${x} ${y}) scale(${k})">${ICON[p].replace(/^<svg[^>]*>|<\/svg>$/g, "")}</g>`;
+  if (v === "yummy") return '<svg class="ic" viewBox="0 0 46 40">' + inner2("banana", 2, 2, .8) + inner2("strawberry", 24, 2, .8) + inner2("pickles", 2, 20, .8) + inner2("sock", 24, 20, .8) + "</svg>";
+  return '<svg class="ic" viewBox="0 0 46 40">' + inner2(v, 7, 4, 1.35) + "</svg>";
+}
+
+/* ---------- build UI ---------- */
+function buildTiles() {
+  for (const cat of ["count", "size", "top"]) {
+    const g = $("tiles-" + cat); g.innerHTML = ""; g.setAttribute("aria-label", CAPS[cat]);
+    for (const v of TILES[cat]) {
+      const b = document.createElement("button"); b.className = "tile cat-" + cat; b.dataset.cat = cat; b.dataset.val = String(v);
+      b.setAttribute("aria-label", WORD(v)); b.innerHTML = tileIcon(cat, v) + (isNum(cat, v) ? "" : `<span class="w">${WORD(v)}</span>`);
+      b.addEventListener("click", () => onTile(cat, v));
+      g.appendChild(b);
+    }
+  }
+}
+function renderSlots() {
+  for (const cat of ["count", "size", "top"]) {
+    const s = $("slot-" + cat), v = S.req[cat];
+    s.classList.toggle("filled", v !== null);
+    s.classList.toggle("glow", S.glowCat === cat);
+    s.innerHTML = v === null ? `<span class="q">?</span><span class="cap">${CAPS[cat]}</span>` : tileIcon(cat, v) + (isNum(cat, v) ? "" : `<span class="w">${WORD(v)}</span>`) + `<span class="cap">${CAPS[cat]}</span>`;
+    s.setAttribute("aria-label", CAPS[cat] + ": " + (v === null ? "empty" : WORD(v)));
+  }
+  document.querySelectorAll(".tile").forEach(t => {
+    const cat = t.dataset.cat, v = S.req[cat];
+    t.classList.toggle("on", v !== null && String(v) === t.dataset.val);
+    t.classList.toggle("wiggle", S.wiggle && S.wiggle.cat === cat && String(S.wiggle.val) === t.dataset.val);
+  });
+}
+function setBusy(b) { S.busy = b; $("askbtn").disabled = b || S.phase !== "ask"; $("replay").disabled = b; $("app").classList.toggle("locked", b || S.phase !== "ask"); }
+function setMood(m) { const p = $("pip"); p.classList.remove("m-sleep", "m-wide", "m-happy", "m-oops", "m-think"); p.classList.add("m-" + m); $("zzz").hidden = m !== "sleep"; }
+async function anim(cls, ms) { const p = $("pip"); p.classList.remove("jump", "spin", "flop", "shake", "bounce"); void p.offsetWidth; p.classList.add(cls); await wait(ms); p.classList.remove(cls); }
+function renderProgress() { document.querySelectorAll(".dot").forEach((d, i) => d.classList.toggle("done", i < S.round || (S.phase === "end"))); }
+
+/* ---------- game logic ---------- */
+function problems(req, g) {
+  const p = [];
+  if (req.size === null) p.push({ cat: "size", type: "missing" }); else if (req.size !== g.size) p.push({ cat: "size", type: "wrong" });
+  if (req.count === null) p.push({ cat: "count", type: "missing" }); else if (req.count === "lots") p.push({ cat: "count", type: "vague" }); else if (req.count !== g.count) p.push({ cat: "count", type: "wrong" });
+  if (req.top === null) p.push({ cat: "top", type: "missing" }); else if (req.top === "yummy") p.push({ cat: "top", type: "vague" }); else if (req.top !== g.top) p.push({ cat: "top", type: "wrong" });
+  return p;
+}
+function cookFrom(req) {
+  return {
+    count: req.count === null ? 12 : req.count === "lots" ? 20 : req.count,
+    size: req.size === null ? "giant" : req.size,
+    top: req.top === null ? "pickles" : req.top === "yummy" ? "everything" : req.top
+  };
+}
+const matches = (c, g) => c.count === g.count && c.size === g.size && c.top === g.top;
+const goal = () => ROUNDS[S.round];
+function describe(o) { const n = o.count; return `${NUMW[n] || n} ${o.size} pancake${n === 1 ? "" : "s"} ${o.top === "plain" ? "plain, with nothing on top" : "with " + o.top}`; }
+function explainLine(p, req, g) {
+  if (p.cat === "count") {
+    if (p.type === "missing") return "Hmm. You didn't tell me how many... so I just kept cooking and cooking! That's WAY too many pancakes!";
+    if (p.type === "vague") return "You said 'lots', so I made lots and lots and LOTS! But how many is lots? Count the pancakes in the picture.";
+    return `You asked for ${NUMW[req.count]}. Let's count the pancakes in the picture and see if that matches.`;
+  }
+  if (p.cat === "size") {
+    if (p.type === "missing") return "You didn't tell me what size... so I made the BIGGEST pancake in the whole wide world! It doesn't even fit!";
+    if (req.size === "muffin") return "Muffins?! You picked the muffin, so I baked muffins! Yummy... but the picture shows pancakes. Are they small, or big?";
+    if (req.size === "half") return "You picked the bitten one, so I took a big bite out of every pancake! Hee hee! Are the pancakes in the picture small, or big?";
+    return `You picked ${req.size} pancakes. Look at the picture. Are those pancakes small, or big?`;
+  }
+  if (p.type === "missing") return "You didn't tell me what goes on top... so I guessed pickles! Pickle pancakes? Blech!";
+  if (p.type === "vague") return "Yummy stuff? I put ALL the yummy stuff on! Banana, strawberry, pickles... and my SOCK! Which one do we really want?";
+  return `You picked ${WORD(req.top)}. Look closely at the picture. What's on top?`;
+}
+
+function newLog() { return { when: new Date().toISOString(), round: S.round + 1, goal: describe(goal()), attempts: 0, maxHint: 0, misfires: [], cwRound: !!goal().cw, cwCaught: null, missedChecks: 0, caught: 0 }; }
+
+async function startRound(i) {
+  S.round = i; S.req = { count: null, size: null, top: null }; S.cwUsed = false; S.fails = 0; S.glowCat = null; S.wiggle = null; S.cooked = null;
+  S.log = newLog(); markWrong([]); renderProgress(); renderSlots();
+  const gp = $("goal-pic"); gp.innerHTML = ""; gp.appendChild(makeStack(goal()));
+  $("plate-wrap").innerHTML = ""; $("plate-wrap").appendChild(makeStack({}, { empty: true }));
+  setMood("happy");
+  await intro(i);
+  S.phase = "ask"; setBusy(false);
+}
+
+async function hl(el, line) { el.classList.add("hl"); await say(line); el.classList.remove("hl"); }
+async function intro(i) {
+  if (i === 0) {
+    await hl($("goal"), "My friend drew a picture of the pancakes she wants. See it? Look very carefully.");
+    await hl($("panel-count"), "The blue tiles tell me how many pancakes.");
+    await hl($("panel-size"), "The orange tiles tell me what size.");
+    await hl($("panel-top"), "The pink tiles tell me what goes on top.");
+    await hl($("askbtn"), "When you're ready, tap Start cooking, and I'll get my frying pan!");
+    return;
+  }
+  const prev = describe(ROUNDS[i - 1]);
+  if (i === 1) {
+    await say(`Mmm! Those ${prev} were DE-LICIOUS! But they didn't fill me up. My tummy says... MORE!`);
+    await say("Let's make something different this time. Look at the new picture!");
+    return;
+  }
+  await say(`Those ${prev}... yum, yum, YUM! Okay, one more batch.`);
+  await say("This one is for my friend, and she likes her pancakes a special way. Check the picture really carefully!");
+}
+
+async function cook() {
+  const g = goal(); const probs = problems(S.req, g); const c = cookFrom(S.req); c.cwError = false;
+  if (g.cw && !S.cwUsed && probs.length === 0) { c.count = g.count - 1; c.cwError = true; S.cwUsed = true; }
+  S.cooked = c; S.log.attempts++;
+  const pw = $("plate-wrap"); pw.innerHTML = ""; const st = makeStack({}, { empty: true }); pw.appendChild(st);
+  setMood("think"); await say("Okay! Cooking...");
+  if (c.size === "giant") {
+    st.classList.add("grow");
+    addCake(st, "giant");
+    await say("Bigger... BIGGER... BIGGEST!");
+  } else if (c.count > 8) {
+    for (let i = 0; i < c.count; i++) { addCake(st, c.size); await wait(110); }
+    await say("One, two, three, four... LOTS!");
+    st.classList.add("wobble"); await wait(1200); st.classList.remove("wobble"); st.classList.add("topple"); await wait(1100);
+  } else {
+    for (let i = 0; i < c.count; i++) { addCake(st, c.size); await voice(NUMW[i + 1]); await wait(150); }
+  }
+  addTops(st, c.top); await wait(400);
+  setMood("happy"); await anim("bounce", 1000);
+  await say(c.cwError ? "Perfect! All done! Did I get it right?" : "Ta-da! Did I get it right?");
+  S.phase = "check"; $("askbtn").hidden = true; $("check").hidden = false; setBusy(false);
+  try { $("check").scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (e) {}
+}
+
+async function onThumb(up) {
+  if (S.busy || S.phase !== "check") return;
+  setBusy(true); $("check").hidden = true; $("askbtn").hidden = false; S.phase = "judge";
+  const g = goal(), c = S.cooked, ok = matches(c, g);
+  if (ok) {
+    if (!up) await say("Let's check with the picture... It matches! We did it!");
+    return success();
+  }
+  if (up) {
+    S.log.missedChecks++;
+    $("goal").classList.add("compare"); $("plate-wrap").classList.add("compare");
+    setMood("think"); await say("Hmm. Let's check with the picture...");
+    $("goal").classList.remove("compare"); $("plate-wrap").classList.remove("compare");
+  } else {
+    S.log.caught++;
+    setMood("oops"); await anim("shake", 1000); await say("You caught it! It's not right.");
+  }
+  if (c.cwError) {
+    S.log.cwCaught = !up; S.log.misfires.push("pip:confident");
+    setMood("oops");
+    await say(`Oops! Let me count. ${NUMW[1]}... only ${NUMW[c.count]}! The picture has ${NUMW[g.count]}. I was sure I got it right!`);
+    const st = $("plate-wrap").querySelector(".stack"); addCake(st, c.size); addTops(st, c.top);
+    await say(up ? "Helpers can make mistakes, even when they sound sure. Always check!" : "Good checking! Helpers can be wrong, even when they sound sure.");
+    return success();
+  }
+  return explain();
+}
+
+function markWrong(cats) { ["count", "size", "top"].forEach(c => $("panel-" + c).classList.toggle("wrong", cats.includes(c))); }
+async function explain() {
+  const g = goal(); const probs = problems(S.req, g); const p = probs[0];
+  S.log.misfires.push(p.cat + ":" + p.type);
+  S.fails = (S.fails || 0) + 1;
+  const level = Math.min(3, S.fails); S.log.maxHint = Math.max(S.log.maxHint, level);
+  setMood("oops");
+  markWrong(probs.map(x => x.cat));
+  await say(explainLine(p, S.req, g), { thought: true });
+  if (level >= 2) {
+    S.glowCat = p.cat; renderSlots(); await say("Look at the glowing one!", { thought: true });
+    if (p.cat === "count") { $("goal").classList.add("compare"); let line = "Let's count the picture together:"; for (let i = 1; i <= g.count; i++) line += " " + NUMW[i] + (i === g.count ? "!" : ","); await say(line, { thought: true }); $("goal").classList.remove("compare"); }
+  }
+  if (level >= 3) { S.wiggle = { cat: p.cat, val: g[p.cat] }; renderSlots(); await say("Let's do it together. Tap the wiggly tile!", { thought: true }); }
+  S.phase = "ask"; setMood("happy"); setBusy(false);
+  S.pendingCat = p.cat; armIdle(p.cat);
+}
+function armIdle(cat) {
+  clearTimeout(S.idle);
+  S.idle = setTimeout(async () => {
+    if (S.phase !== "ask" || S.glowCat) return;
+    if (S.busy) return armIdle(cat);
+    S.glowCat = cat; S.log.maxHint = Math.max(S.log.maxHint, 2); renderSlots();
+    await say("Psst... look at the glowing one!", { thought: true });
+  }, FAST ? 50 : 20000);
+}
+
+async function success() {
+  setBusy(true); S.phase = "done"; clearTimeout(S.idle); S.pendingCat = null; S.glowCat = null; S.wiggle = null; renderSlots();
+  setMood("happy"); anim("jump", 700);
+  const g = goal();
+  S.log.unaided = S.log.maxHint <= 1;
+  mem.log.push(S.log); mem.shelf.push({ count: g.count, size: g.size, top: g.top, when: new Date().toISOString() }); save();
+  await say(`Yes! ${describe(g)[0].toUpperCase() + describe(g).slice(1)}, exactly like the picture! You told me just right.`);
+  await say("Nom, nom, nom!");
+  S.round++; renderProgress();
+  if (S.round < ROUNDS.length) return startRound(S.round);
+  return finish();
+}
+
+async function finish() {
+  S.phase = "end"; renderProgress();
+  await say("Three batches of pancakes! My tummy is SO full and SO happy. Thank you for being my helper chef!");
+  await say("Next time, let's make syrup... a whole river of syrup!");
+  showShelf(); $("end").hidden = false; setBusy(false);
+}
+function showShelf() { const sh = $("shelf"); sh.innerHTML = ""; mem.shelf.slice(-9).forEach(o => { const d = document.createElement("div"); d.className = "item"; d.appendChild(makeStack(o)); sh.appendChild(d); }); }
+
+/* ---------- events ---------- */
+function onTile(cat, v) {
+  if (S.busy || S.phase !== "ask") return;
+  S.req[cat] = v;
+  $("panel-" + cat).classList.remove("wrong");
+  if (S.glowCat === cat && String(v) === String(goal()[cat])) S.glowCat = null;
+  if (S.wiggle && S.wiggle.cat === cat && String(v) === String(S.wiggle.val)) S.wiggle = null;
+  renderSlots(); quickWord(WORD(v));
+  if (S.pendingCat && !S.glowCat) armIdle(S.pendingCat);
+}
+function onSlot(cat) { if (S.busy || S.phase !== "ask" || S.req[cat] === null) return; S.req[cat] = null; renderSlots(); }
+async function onAsk() { if (S.busy || S.phase !== "ask") return; clearTimeout(S.idle); S.pendingCat = null; S.phase = "cook"; setBusy(true); markWrong([]); S.glowCat = null; S.wiggle = null; renderSlots(); await cook(); }
+
+async function wake() {
+  setBusy(true); S.phase = "waking";
+  let i; do { i = Math.floor(Math.random() * WAKE.length); } while (i === mem.lastWake && WAKE.length > 1);
+  mem.lastWake = i; save();
+  setMood("wide"); const r = WAKE[i];
+  await Promise.all([anim(r.anim, 1000), say(r.line)]);
+  setMood("happy"); await say("Oh! Hello! I'm Pip. My tummy is rumbling like a thunderstorm.");
+  await say("Will you be my helper chef and help me make pancakes?");
+  if (mem.shelf.length) await recap();
+  await startRound(0);
+}
+async function recap() {
+  const items = mem.shelf.slice(-3).reverse();
+  const wrap = document.createElement("span"), row = document.createElement("span"); row.className = "minirow";
+  items.forEach(o => { const m = document.createElement("span"); m.className = "mini"; m.appendChild(makeStack(o)); row.appendChild(m); });
+  const sk = document.createElement("button"); sk.className = "skip"; sk.id = "skip"; sk.textContent = "Skip"; sk.setAttribute("aria-label", "Skip");
+  S.skipRecap = false;
+  sk.addEventListener("click", () => { S.skipRecap = true; try { if (synth) synth.cancel(); } catch (e) {} if (S.cut) S.cut(); });
+  wrap.append(row, sk);
+  await say("Look at all the pancakes we made before! Those were SO fun.", { extra: wrap });
+  if (!S.skipRecap) await say(`Remember the ${describe(items[0])}? Yum!`, { extra: wrap });
+  await say("Let's make more!");
+}
+async function onPip() {
+  if (S.busy) return;
+  if (S.phase === "sleep") return wake();
+  if (S.phase === "ask") { anim("bounce", 1000); voice("Hee hee! That tickles!"); }
+}
+async function begin() {
+  $("start").hidden = true; S.phase = "sleep"; setMood("sleep"); setBusy(false);
+  $("plate-wrap").innerHTML = ""; $("plate-wrap").appendChild(makeStack({}, { empty: true })); $("goal-pic").innerHTML = "";
+  S.round = 0; renderProgress();
+  await say("Shh... Pip is sleeping. Tap Pip!");
+}
+
+/* grown-ups: press and hold */
+let holdT = null;
+function holdStart(e) { e.preventDefault(); const b = $("grownups"); b.classList.add("holding"); holdT = setTimeout(() => { b.classList.remove("holding"); openAdult(); }, FAST ? 10 : 2000); }
+function holdEnd() { clearTimeout(holdT); $("grownups").classList.remove("holding"); }
+function openAdult() {
+  const L = mem.log, n = L.length, un = L.filter(r => r.unaided).length, cw = L.filter(r => r.cwRound), cwc = cw.filter(r => r.cwCaught).length;
+  $("adult-sum").textContent = n ? `${n} rounds played. Solved without strong hints: ${un} of ${n}. Caught Pip's confident mistake: ${cwc} of ${cw.length}.` : "No rounds played yet.";
+  const rows = L.slice().reverse().map(r => `<tr><td>${new Date(r.when).toLocaleString()}</td><td>${r.round}</td><td>${r.goal}</td><td>${r.attempts}</td><td>${r.maxHint}</td><td>${r.misfires.join(", ") || "none"}</td><td>${r.cwRound ? (r.cwCaught ? "yes" : "no") : "n/a"}</td><td>${r.missedChecks}</td><td>${r.unaided ? "yes" : "no"}</td></tr>`).join("");
+  $("adult-tbl").innerHTML = `<table><thead><tr><th>When</th><th>Round</th><th>Goal</th><th>Tries</th><th>Top hint (0–3)</th><th>Misfires</th><th>Caught confident mistake</th><th>Said "right" when wrong</th><th>Unaided</th></tr></thead><tbody>${rows}</tbody></table>`;
+  $("adult-reset").textContent = "Erase all data"; $("adult").hidden = false;
+}
+let resetArmed = false;
+function onReset() {
+  const b = $("adult-reset");
+  if (!resetArmed) { resetArmed = true; b.textContent = "Tap again to erase"; setTimeout(() => { resetArmed = false; b.textContent = "Erase all data"; }, 4000); return; }
+  resetArmed = false; mem = { shelf: [], log: [], lastWake: -1 }; try { localStorage.removeItem(KEY); } catch (e) {}
+  if (S.log) S.log = newLog();
+  b.textContent = "Erased"; openAdult();
+}
+
+function init() {
+  load(); buildTiles(); renderSlots(); renderProgress(); setMood("sleep");
+  $("startbtn").addEventListener("click", begin);
+  $("pip").addEventListener("click", onPip);
+  document.querySelectorAll(".slot").forEach(s => s.addEventListener("click", () => onSlot(s.dataset.cat)));
+  $("askbtn").addEventListener("click", onAsk);
+  $("up").addEventListener("click", () => onThumb(true));
+  $("down").addEventListener("click", () => onThumb(false));
+  $("again").addEventListener("click", () => { $("end").hidden = true; begin(); });
+  $("replay").addEventListener("click", () => { if (!S.busy && S.lastLine) voice(S.lastLine); });
+  $("mute").addEventListener("click", () => { S.muted = !S.muted; $("mute").setAttribute("aria-pressed", String(S.muted)); $("mute-x").style.display = S.muted ? "" : "none"; $("mute-w").style.display = S.muted ? "none" : ""; if (S.muted && synth) try { synth.cancel(); } catch (e) {} });
+  const gb = $("grownups");
+  gb.addEventListener("pointerdown", holdStart); ["pointerup", "pointerleave", "pointercancel"].forEach(ev => gb.addEventListener(ev, holdEnd));
+  gb.addEventListener("contextmenu", e => e.preventDefault());
+  $("adult-close").addEventListener("click", () => { $("adult").hidden = true; });
+  $("adult-reset").addEventListener("click", onReset);
+  setBusy(false);
+}
+window.__game = { S, ROUNDS, get mem() { return mem; } };
+init();
+})();
+</script>
+
+</body>
+</html>
