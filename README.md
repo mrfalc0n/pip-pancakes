@@ -13,11 +13,11 @@ Pip behaves like an AI helper. When a detail is missing or vague, Pip guesses, w
 
 **Design notes**
 - Single self-contained HTML file. No accounts, ads, analytics, or network calls. Progress is kept only in the browser's local storage.
-- Pre-reader friendly: the device's voice reads every line; tiles are picture-first.
+- Pre-reader friendly: Pip's 78 lines are pre-recorded (ElevenLabs, voice "Peanut"), with the device's own voice as a fallback; tiles are picture-first.
 - A hidden grown-ups panel (press and hold for 2 seconds) shows a per-round log: tries, hint level, which mistakes happened, and whether the child caught Pip's confident mistake.
 - Help steps up gradually: Pip explains its guess and the wrong groups blink red; then the slot glows; then the right tile wiggles.
 
-**Status:** early prototype (M1.4, October 2026). Pip's dialogue is pre-written; no live AI model runs in this version.
+**Status:** early prototype (M1.5, October 2026): character art designed with Gemini and rebuilt as animated vector code, recorded voice. Pip's dialogue is pre-written; no live AI model runs in this version.
 
 **How it was built:** designed with AI-assisted product critique and built by Claude (Anthropic) under human product direction, with automated browser playthrough tests and an independent AI review pass.
 

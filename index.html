@@ -116,7 +116,10 @@ button:focus-visible{outline:4px solid var(--focus);outline-offset:3px}
 /* pip moods */
 .e{display:none}
 .m-sleep .e-sleep,.m-wide .e-wide,.m-happy .e-happy,.m-oops .e-oops,.m-think .e-think{display:inline}
-.m-sleep .bulb{fill:var(--bulb-off)}
+.m-sleep .bulb,.m-oops .bulb{opacity:.3}
+.m-happy .sparkles{animation:twinkle 1.1s ease-in-out infinite}
+.m-think .bulb{animation:twinkle .9s ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:1}50%{opacity:.35}}
 #pip.jump{animation:jump .7s ease-out}
 #pip.spin{animation:spin .8s ease-in-out}
 #pip.flop{animation:flop 1s ease-in-out}
@@ -172,27 +175,70 @@ button:focus-visible{outline:4px solid var(--focus);outline-offset:3px}
     <div id="plate-wrap"></div>
     <button id="pip" aria-label="Pip" class="m-sleep">
       <svg viewBox="0 0 200 230" aria-hidden="true">
-        <path d="M100 40 Q104 18 118 12" stroke="#4b31c4" stroke-width="5" fill="none" stroke-linecap="round"/>
-        <circle class="bulb" cx="120" cy="11" r="10" fill="#ffd23f"/>
-        <ellipse cx="72" cy="214" rx="22" ry="10" fill="#4b31c4"/>
-        <ellipse cx="128" cy="214" rx="22" ry="10" fill="#4b31c4"/>
-        <ellipse cx="28" cy="140" rx="12" ry="22" fill="#6a4cf0" transform="rotate(20 28 140)"/>
-        <ellipse cx="172" cy="140" rx="12" ry="22" fill="#6a4cf0" transform="rotate(-20 172 140)"/>
-        <path d="M44 206 Q20 206 26 132 Q34 44 100 40 Q166 44 174 132 Q180 206 156 206 Z" fill="#6a4cf0"/>
-        <ellipse cx="100" cy="160" rx="46" ry="36" fill="#b0a2ff"/>
-        <!-- third eye: the species' signature -->
-        <g class="e e-wide e-happy e-oops e-think"><circle cx="100" cy="70" r="8" fill="#fff"/><circle cx="100" cy="71" r="4" fill="#1f2d47"/></g>
-        <g class="e e-sleep"><path d="M93 70 Q100 75 107 70" stroke="#1f2d47" stroke-width="3" fill="none" stroke-linecap="round"/></g>
-        <!-- sleep -->
-        <g class="e e-sleep" stroke="#1f2d47" stroke-width="4" fill="none" stroke-linecap="round"><path d="M60 104 Q72 112 84 104"/><path d="M116 104 Q128 112 140 104"/><ellipse cx="100" cy="134" rx="7" ry="5" fill="#1f2d47"/></g>
-        <!-- wide (surprised) -->
-        <g class="e e-wide"><ellipse cx="72" cy="102" rx="17" ry="21" fill="#fff"/><ellipse cx="128" cy="102" rx="17" ry="21" fill="#fff"/><circle cx="72" cy="104" r="7" fill="#1f2d47"/><circle cx="128" cy="104" r="7" fill="#1f2d47"/><ellipse cx="100" cy="138" rx="11" ry="13" fill="#1f2d47"/></g>
-        <!-- happy -->
-        <g class="e e-happy"><ellipse cx="72" cy="102" rx="15" ry="18" fill="#fff"/><ellipse cx="128" cy="102" rx="15" ry="18" fill="#fff"/><circle cx="74" cy="104" r="8" fill="#1f2d47"/><circle cx="130" cy="104" r="8" fill="#1f2d47"/><circle cx="77" cy="100" r="2.5" fill="#fff"/><circle cx="133" cy="100" r="2.5" fill="#fff"/><path d="M80 130 Q100 150 120 130" stroke="#1f2d47" stroke-width="5" fill="#ff8fb1" stroke-linecap="round"/></g>
-        <!-- oops (embarrassed) -->
-        <g class="e e-oops"><ellipse cx="72" cy="102" rx="15" ry="18" fill="#fff"/><ellipse cx="128" cy="102" rx="15" ry="18" fill="#fff"/><circle cx="70" cy="108" r="7" fill="#1f2d47"/><circle cx="126" cy="108" r="7" fill="#1f2d47"/><ellipse cx="56" cy="128" rx="10" ry="6" fill="#ff8fb1"/><ellipse cx="144" cy="128" rx="10" ry="6" fill="#ff8fb1"/><path d="M84 138 Q92 132 100 138 Q108 144 116 138" stroke="#1f2d47" stroke-width="4" fill="none" stroke-linecap="round"/></g>
-        <!-- think -->
-        <g class="e e-think"><ellipse cx="72" cy="102" rx="15" ry="18" fill="#fff"/><ellipse cx="128" cy="102" rx="15" ry="18" fill="#fff"/><circle cx="78" cy="96" r="7" fill="#1f2d47"/><circle cx="134" cy="96" r="7" fill="#1f2d47"/><path d="M88 136 L114 132" stroke="#1f2d47" stroke-width="4" stroke-linecap="round"/></g>
+        <defs><radialGradient id="pipglow"><stop offset="0" stop-color="#fff6ff"/><stop offset=".45" stop-color="#f3c9ff" stop-opacity=".85"/><stop offset="1" stop-color="#e6b3ff" stop-opacity="0"/></radialGradient></defs>
+        <ellipse cx="100" cy="219" rx="62" ry="7" fill="#ded0e9"/>
+        <!-- arms behind body -->
+        <g class="e e-sleep"><ellipse cx="33" cy="156" rx="11" ry="20" fill="#b580f0" stroke="#36154a" stroke-width="4" transform="rotate(14 33 156)"/></g>
+        <g class="e e-sleep e-think"><ellipse cx="167" cy="156" rx="11" ry="20" fill="#b580f0" stroke="#36154a" stroke-width="4" transform="rotate(-14 167 156)"/></g>
+        <g class="e e-happy"><ellipse cx="30" cy="104" rx="11" ry="23" fill="#b580f0" stroke="#36154a" stroke-width="4" transform="rotate(-40 30 104)"/><ellipse cx="170" cy="104" rx="11" ry="23" fill="#b580f0" stroke="#36154a" stroke-width="4" transform="rotate(40 170 104)"/></g>
+        <!-- feet -->
+        <ellipse cx="76" cy="205" rx="17" ry="13" fill="#b580f0" stroke="#36154a" stroke-width="4"/>
+        <ellipse cx="124" cy="205" rx="17" ry="13" fill="#b580f0" stroke="#36154a" stroke-width="4"/>
+        <!-- antenna: curl ending in a star (keep the curl in every mood) -->
+        <path class="stalk" d="M100 50 C99 34 95 24 103 16 C111 8 125 14 121 25 C117 36 99 31 106 17 C111 7 127 5 136 11" fill="none" stroke="#36154a" stroke-width="9" stroke-linecap="round"/>
+        <path class="stalk" d="M100 50 C99 34 95 24 103 16 C111 8 125 14 121 25 C117 36 99 31 106 17 C111 7 127 5 136 11" fill="none" stroke="#b580f0" stroke-width="4" stroke-linecap="round"/>
+        <g class="star" transform="translate(143 13) scale(1.3)">
+          <circle class="bulb" r="19" fill="url(#pipglow)"/>
+          <path d="M0 -11 L3.2 -4 L10.5 -3.4 L5 1.6 L6.6 9 L0 5.2 L-6.6 9 L-5 1.6 L-10.5 -3.4 L-3.2 -4 Z" fill="#fde8ff" stroke="#36154a" stroke-width="2.4" stroke-linejoin="round"/>
+        </g>
+        <!-- body -->
+        <path d="M100 46 C147 46 173 88 174 138 C175 186 151 209 100 209 C49 209 25 186 26 138 C27 88 53 46 100 46 Z" fill="#b580f0" stroke="#36154a" stroke-width="4.5"/>
+        <ellipse cx="68" cy="80" rx="17" ry="9" fill="#d3b2fa" transform="rotate(-32 68 80)"/>
+        <circle cx="84" cy="66" r="3.5" fill="#d3b2fa"/>
+        <g fill="#cdaaf8"><circle cx="44" cy="158" r="3.2"/><circle cx="52" cy="171" r="2.4"/><circle cx="41" cy="177" r="2"/><circle cx="156" cy="158" r="3.2"/><circle cx="148" cy="171" r="2.4"/><circle cx="159" cy="177" r="2"/></g>
+        <!-- soft cheeks -->
+        <g class="e e-sleep e-happy e-think e-wide"><ellipse cx="58" cy="138" rx="9" ry="5" fill="#f0a0d8" opacity=".8"/><ellipse cx="142" cy="138" rx="9" ry="5" fill="#f0a0d8" opacity=".8"/></g>
+        <!-- SLEEP: heavy lids, yawn -->
+        <g class="e e-sleep">
+          <ellipse cx="100" cy="82" rx="10" ry="10" fill="#fff" stroke="#36154a" stroke-width="3"/><circle cx="100" cy="86" r="4" fill="#36154a"/><path d="M89 82 A11 11 0 0 1 111 82 Z" fill="#a46de6" stroke="#36154a" stroke-width="3"/>
+          <ellipse cx="77" cy="113" rx="13" ry="13" fill="#fff" stroke="#36154a" stroke-width="3"/><circle cx="77" cy="118" r="5" fill="#36154a"/><path d="M63 113 A14 14 0 0 1 91 113 Z" fill="#a46de6" stroke="#36154a" stroke-width="3"/>
+          <ellipse cx="123" cy="113" rx="13" ry="13" fill="#fff" stroke="#36154a" stroke-width="3"/><circle cx="123" cy="118" r="5" fill="#36154a"/><path d="M109 113 A14 14 0 0 1 137 113 Z" fill="#a46de6" stroke="#36154a" stroke-width="3"/>
+          <ellipse cx="100" cy="153" rx="11" ry="14" fill="#703259" stroke="#36154a" stroke-width="3"/><ellipse cx="100" cy="161" rx="6.5" ry="4" fill="#ed8095"/>
+        </g>
+        <!-- WIDE (surprised): three big eyes, tiny pupils, O mouth, hands at cheeks -->
+        <g class="e e-wide">
+          <circle cx="100" cy="80" r="12" fill="#fff" stroke="#36154a" stroke-width="3"/><circle cx="100" cy="80" r="4.5" fill="#36154a"/>
+          <circle cx="76" cy="112" r="15" fill="#fff" stroke="#36154a" stroke-width="3"/><circle cx="76" cy="112" r="5" fill="#36154a"/>
+          <circle cx="124" cy="112" r="15" fill="#fff" stroke="#36154a" stroke-width="3"/><circle cx="124" cy="112" r="5" fill="#36154a"/>
+          <ellipse cx="100" cy="150" rx="8" ry="11" fill="#703259" stroke="#36154a" stroke-width="3"/><ellipse cx="100" cy="155" rx="4.5" ry="3" fill="#ed8095"/>
+          <ellipse cx="50" cy="146" rx="12" ry="10" fill="#b580f0" stroke="#36154a" stroke-width="4"/><ellipse cx="150" cy="146" rx="12" ry="10" fill="#b580f0" stroke="#36154a" stroke-width="4"/>
+        </g>
+        <!-- HAPPY: crescent eyes, big laugh -->
+        <g class="e e-happy">
+          <circle cx="100" cy="80" r="11" fill="#fff" stroke="#36154a" stroke-width="3"/><circle cx="100" cy="81" r="5.5" fill="#36154a"/><circle cx="102" cy="78" r="1.8" fill="#fff"/>
+          <path d="M64 116 Q77 100 90 116" fill="none" stroke="#36154a" stroke-width="5" stroke-linecap="round"/><path d="M110 116 Q123 100 136 116" fill="none" stroke="#36154a" stroke-width="5" stroke-linecap="round"/>
+          <path d="M78 136 Q100 172 122 136 Z" fill="#703259" stroke="#36154a" stroke-width="3.5" stroke-linejoin="round"/><path d="M87 152 Q100 166 113 152 Q100 145 87 152 Z" fill="#ed8095"/>
+          <g class="sparkles" fill="#c9a3f5"><path d="M30 52 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 Z"/><path d="M170 58 l2.4 5.6 5.6 2.4 -5.6 2.4 -2.4 5.6 -2.4 -5.6 -5.6 -2.4 5.6 -2.4 Z"/><path d="M52 30 l2 4.5 4.5 2 -4.5 2 -2 4.5 -2 -4.5 -4.5 -2 4.5 -2 Z"/></g>
+        </g>
+        <!-- OOPS (embarrassed): side glance, strong blush, shy wavy smile, hands at cheeks -->
+        <g class="e e-oops">
+          <circle cx="100" cy="80" r="11" fill="#fff" stroke="#36154a" stroke-width="3"/><circle cx="105" cy="82" r="5" fill="#36154a"/>
+          <ellipse cx="77" cy="114" rx="13" ry="14" fill="#fff" stroke="#36154a" stroke-width="3"/><circle cx="83" cy="117" r="6" fill="#36154a"/><circle cx="85" cy="114" r="1.8" fill="#fff"/>
+          <ellipse cx="123" cy="114" rx="13" ry="14" fill="#fff" stroke="#36154a" stroke-width="3"/><circle cx="129" cy="117" r="6" fill="#36154a"/><circle cx="131" cy="114" r="1.8" fill="#fff"/>
+          <ellipse cx="60" cy="140" rx="13" ry="8" fill="#ff8fa5"/><ellipse cx="140" cy="140" rx="13" ry="8" fill="#ff8fa5"/>
+          <g stroke="#e0607c" stroke-width="2" stroke-linecap="round"><path d="M53 143 l4 -6 M59 144 l4 -6 M65 144 l4 -6 M133 143 l4 -6 M139 144 l4 -6 M145 144 l4 -6"/></g>
+          <path d="M88 150 Q94 155 100 150 Q106 155 112 150" fill="none" stroke="#36154a" stroke-width="3.5" stroke-linecap="round"/>
+          <ellipse cx="52" cy="152" rx="11" ry="10" fill="#b580f0" stroke="#36154a" stroke-width="4"/><ellipse cx="148" cy="152" rx="11" ry="10" fill="#b580f0" stroke="#36154a" stroke-width="4"/>
+        </g>
+        <!-- THINK: eyes up at the star, hand on chin -->
+        <g class="e e-think">
+          <circle cx="100" cy="80" r="11" fill="#fff" stroke="#36154a" stroke-width="3"/><circle cx="103" cy="75" r="5" fill="#36154a"/>
+          <ellipse cx="77" cy="114" rx="13" ry="14" fill="#fff" stroke="#36154a" stroke-width="3"/><circle cx="81" cy="107" r="6" fill="#36154a"/>
+          <ellipse cx="123" cy="114" rx="13" ry="14" fill="#fff" stroke="#36154a" stroke-width="3"/><circle cx="127" cy="107" r="6" fill="#36154a"/>
+          <path d="M90 151 Q100 145 110 149" fill="none" stroke="#36154a" stroke-width="3.5" stroke-linecap="round"/>
+          <ellipse cx="112" cy="163" rx="12" ry="9" fill="#b580f0" stroke="#36154a" stroke-width="4" transform="rotate(-20 112 163)"/>
+          <ellipse cx="33" cy="156" rx="11" ry="20" fill="#b580f0" stroke="#36154a" stroke-width="4" transform="rotate(14 33 156)"/>
+        </g>
       </svg>
     </button>
     <div id="zzz" aria-hidden="true">z z Z</div>
@@ -243,7 +289,7 @@ button:focus-visible{outline:4px solid var(--focus);outline-offset:3px}
 <div class="overlay" id="adult" hidden>
   <div class="card">
     <h2>For grown-ups</h2>
-    <p style="margin:0 0 6px">This is a test build. Pip's words and mistakes are pre-written. No live SI (AI model) runs, and nothing leaves this device. The log below is saved only in this browser.</p>
+    <p style="margin:0 0 6px">This is a test build. Pip's words and mistakes are pre-written, and Pip's voice is pre-recorded. No live SI (AI model) runs, and nothing leaves this device. The log below is saved only in this browser.</p>
     <div class="sum" id="adult-sum"></div>
     <div class="tbl" id="adult-tbl"></div>
     <div class="row"><button id="adult-close">Close</button><button class="danger" id="adult-reset">Erase all data</button></div>
@@ -299,23 +345,51 @@ function say(text, opts = {}) {
   if (opts.extra) b.appendChild(opts.extra);
   return voice(text);
 }
+/* Recorded voice (ElevenLabs, voice "Peanut"); device speech is the fallback. */
+const AUDIO = {"WAAAH! A pancake monster! Oh. It's you!": "audio/00.mp3", "Hic! I was dreaming about syrup. Hic!": "audio/01.mp3", "Who turned on the morning?!": "audio/02.mp3", "Whoa! I fell right out of my dream!": "audio/03.mp3", "I wasn't sleeping! I was testing my eyelids.": "audio/04.mp3", "Oh! Hello! I'm Pip. My tummy is rumbling like a thunderstorm.": "audio/05.mp3", "Will you be my helper chef and help me make pancakes?": "audio/06.mp3", "Zzz... is somebody there? Zzz... tap me... zzz...": "audio/07.mp3", "My friend drew a picture of the pancakes she wants. See it? Look very carefully.": "audio/08.mp3", "The blue tiles tell me how many pancakes.": "audio/09.mp3", "The orange tiles tell me what size.": "audio/10.mp3", "The pink tiles tell me what goes on top.": "audio/11.mp3", "When you're ready, tap Start cooking, and I'll get my frying pan!": "audio/12.mp3", "Mmm! Those four small pancakes with banana were DE-LICIOUS! But they didn't fill me up. My tummy says... MORE!": "audio/13.mp3", "Let's make something different this time. Look at the new picture!": "audio/14.mp3", "Those two big pancakes with strawberry... yum, yum, YUM! Okay, one more batch.": "audio/15.mp3", "This one is for my friend, and she likes her pancakes a special way. Check the picture really carefully!": "audio/16.mp3", "Look at all the pancakes we made before! Those were SO fun.": "audio/17.mp3", "Remember the four small pancakes with banana? Yum!": "audio/18.mp3", "Remember the two big pancakes with strawberry? Yum!": "audio/19.mp3", "Remember the eight small plain pancakes, with nothing on top? Yum!": "audio/20.mp3", "Let's make more!": "audio/21.mp3", "Okay! Cooking...": "audio/22.mp3", "Bigger... BIGGER... BIGGEST!": "audio/23.mp3", "One, two, three, four... LOTS!": "audio/24.mp3", "one": "audio/25.mp3", "two": "audio/26.mp3", "three": "audio/27.mp3", "four": "audio/28.mp3", "five": "audio/29.mp3", "six": "audio/30.mp3", "seven": "audio/31.mp3", "eight": "audio/32.mp3", "Perfect! All done! Did I get it right?": "audio/33.mp3", "Ta-da! Did I get it right?": "audio/34.mp3", "Let's check with the picture... It matches! We did it!": "audio/35.mp3", "Hmm. Let's check with the picture...": "audio/36.mp3", "You caught it! It's not right.": "audio/37.mp3", "Oops! Let me count. one... only one! The picture has two. I was sure I got it right!": "audio/38.mp3", "Helpers can make mistakes, even when they sound sure. Always check!": "audio/39.mp3", "Good checking! Helpers can be wrong, even when they sound sure.": "audio/40.mp3", "Hmm. You didn't tell me how many... so I just kept cooking and cooking! That's WAY too many pancakes!": "audio/41.mp3", "You said 'lots', so I made lots and lots and LOTS! But how many is lots? Count the pancakes in the picture.": "audio/42.mp3", "You asked for two. Let's count the pancakes in the picture and see if that matches.": "audio/43.mp3", "You asked for four. Let's count the pancakes in the picture and see if that matches.": "audio/44.mp3", "You asked for eight. Let's count the pancakes in the picture and see if that matches.": "audio/45.mp3", "You didn't tell me what size... so I made the BIGGEST pancake in the whole wide world! It doesn't even fit!": "audio/46.mp3", "Muffins?! You picked the muffin, so I baked muffins! Yummy... but the picture shows pancakes. Are they small, or big?": "audio/47.mp3", "You picked the bitten one, so I took a big bite out of every pancake! Hee hee! Are the pancakes in the picture small, or big?": "audio/48.mp3", "You picked small pancakes. Look at the picture. Are those pancakes small, or big?": "audio/49.mp3", "You picked big pancakes. Look at the picture. Are those pancakes small, or big?": "audio/50.mp3", "You didn't tell me what goes on top... so I guessed pickles! Pickle pancakes? Blech!": "audio/51.mp3", "Yummy stuff? I put ALL the yummy stuff on! Banana, strawberry, pickles... and my SOCK! Which one do we really want?": "audio/52.mp3", "You picked banana. Look closely at the picture. What's on top?": "audio/53.mp3", "You picked strawberry. Look closely at the picture. What's on top?": "audio/54.mp3", "You picked plain. Look closely at the picture. What's on top?": "audio/55.mp3", "Look at the glowing one!": "audio/56.mp3", "Let's count the picture together: one, two, three, four!": "audio/57.mp3", "Let's count the picture together: one, two!": "audio/58.mp3", "Let's count the picture together: one, two, three, four, five, six, seven, eight!": "audio/59.mp3", "Let's do it together. Tap the wiggly tile!": "audio/60.mp3", "Psst... look at the glowing one!": "audio/61.mp3", "Yes! Four small pancakes with banana, exactly like the picture! You told me just right.": "audio/62.mp3", "Yes! Two big pancakes with strawberry, exactly like the picture! You told me just right.": "audio/63.mp3", "Yes! Eight small plain pancakes, with nothing on top, exactly like the picture! You told me just right.": "audio/64.mp3", "Nom, nom, nom!": "audio/65.mp3", "Three batches of pancakes! My tummy is SO full and SO happy. Thank you for being my helper chef!": "audio/66.mp3", "Next time, let's make syrup... a whole river of syrup!": "audio/67.mp3", "Hee hee! That tickles!": "audio/68.mp3", "lots": "audio/69.mp3", "small": "audio/70.mp3", "big": "audio/71.mp3", "muffin": "audio/72.mp3", "bitten": "audio/73.mp3", "banana": "audio/74.mp3", "strawberry": "audio/75.mp3", "plain": "audio/76.mp3", "yummy stuff": "audio/77.mp3"};
+const NUMCLIP = { "2": "two", "4": "four", "8": "eight" };
+const player = (typeof Audio !== "undefined") ? new Audio() : null;
+let primed = false;
+function primeAudio() { if (primed || !player) return; primed = true; Object.values(AUDIO).forEach(src => { try { const a = new Audio(); a.preload = "auto"; a.src = src; } catch (e) {} }); }
+function clipFor(text) { return AUDIO[text] || AUDIO[NUMCLIP[text]] || null; }
+function speakSynth(text, fin, est) {
+  if (S.muted || !synth) { setTimeout(fin, Math.max(900, est * 0.7)); return; }
+  try {
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(text.replace(/[!?]{2,}/g, "!"));
+    u.rate = 1.05; u.pitch = 1.25; u.onend = fin; u.onerror = fin;
+    synth.speak(u);
+  } catch (e) { fin(); }
+  setTimeout(fin, est + 1500);
+}
 function voice(text) {
   const est = Math.min(9000, 500 + text.length * 62);
+  const src = clipFor(text);
+  if (!src) (window.__missingAudio = window.__missingAudio || []).push(text);
   if (FAST) return Promise.resolve();
   return new Promise(resolve => {
     let done = false; const fin = () => { if (!done) { done = true; resolve(); } };
-    S.cut = fin;
-    if (S.muted || !synth) { setTimeout(fin, Math.max(900, est * 0.7)); return; }
-    try {
-      synth.cancel();
-      const u = new SpeechSynthesisUtterance(text.replace(/[!?]{2,}/g, "!"));
-      u.rate = 1.05; u.pitch = 1.25; u.onend = fin; u.onerror = fin;
-      synth.speak(u);
-    } catch (e) { fin(); }
-    setTimeout(fin, est + 1500);
+    S.cut = () => { try { if (player) player.pause(); } catch (e) {} fin(); };
+    if (S.muted) { setTimeout(fin, Math.max(900, est * 0.7)); return; }
+    if (src && player) {
+      try { if (synth) synth.cancel(); } catch (e) {}
+      try {
+        player.pause(); player.onended = fin; player.onerror = () => speakSynth(text, fin, est);
+        player.src = src; player.currentTime = 0;
+        const pr = player.play(); if (pr && pr.catch) pr.catch(() => speakSynth(text, fin, est));
+      } catch (e) { speakSynth(text, fin, est); }
+      setTimeout(fin, est + 4000);
+      return;
+    }
+    speakSynth(text, fin, est);
   });
 }
-function quickWord(text) { if (!FAST && !S.muted && synth) { try { synth.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = 1; u.pitch = 1.3; synth.speak(u); } catch (e) {} } }
+function quickWord(text) {
+  if (FAST || S.muted) return;
+  const src = clipFor(text);
+  if (src && player) { try { if (synth) synth.cancel(); player.pause(); player.onended = null; player.onerror = null; player.src = src; player.currentTime = 0; const pr = player.play(); if (pr && pr.catch) pr.catch(() => {}); } catch (e) {} return; }
+  if (synth) { try { synth.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = 1; u.pitch = 1.3; synth.speak(u); } catch (e) {} }
+}
 
 /* ---------- drawing ---------- */
 const ICON = {
@@ -408,7 +482,7 @@ function cookFrom(req) {
 }
 const matches = (c, g) => c.count === g.count && c.size === g.size && c.top === g.top;
 const goal = () => ROUNDS[S.round];
-function describe(o) { const n = o.count; return `${NUMW[n] || n} ${o.size} pancake${n === 1 ? "" : "s"} ${o.top === "plain" ? "plain, with nothing on top" : "with " + o.top}`; }
+function describe(o) { const n = o.count, s = n === 1 ? "" : "s"; return o.top === "plain" ? `${NUMW[n] || n} ${o.size} plain pancake${s}, with nothing on top` : `${NUMW[n] || n} ${o.size} pancake${s} with ${o.top}`; }
 function explainLine(p, req, g) {
   if (p.cat === "count") {
     if (p.type === "missing") return "Hmm. You didn't tell me how many... so I just kept cooking and cooking! That's WAY too many pancakes!";
@@ -600,10 +674,11 @@ async function onPip() {
   if (S.phase === "ask") { anim("bounce", 1000); voice("Hee hee! That tickles!"); }
 }
 async function begin() {
+  primeAudio();
   $("start").hidden = true; S.phase = "sleep"; setMood("sleep"); setBusy(false);
   $("plate-wrap").innerHTML = ""; $("plate-wrap").appendChild(makeStack({}, { empty: true })); $("goal-pic").innerHTML = "";
   S.round = 0; renderProgress();
-  await say("Shh... Pip is sleeping. Tap Pip!");
+  await say("Zzz... is somebody there? Zzz... tap me... zzz...");
 }
 
 /* grown-ups: press and hold */
@@ -636,7 +711,7 @@ function init() {
   $("down").addEventListener("click", () => onThumb(false));
   $("again").addEventListener("click", () => { $("end").hidden = true; begin(); });
   $("replay").addEventListener("click", () => { if (!S.busy && S.lastLine) voice(S.lastLine); });
-  $("mute").addEventListener("click", () => { S.muted = !S.muted; $("mute").setAttribute("aria-pressed", String(S.muted)); $("mute-x").style.display = S.muted ? "" : "none"; $("mute-w").style.display = S.muted ? "none" : ""; if (S.muted && synth) try { synth.cancel(); } catch (e) {} });
+  $("mute").addEventListener("click", () => { S.muted = !S.muted; $("mute").setAttribute("aria-pressed", String(S.muted)); $("mute-x").style.display = S.muted ? "" : "none"; $("mute-w").style.display = S.muted ? "none" : ""; if (S.muted) { try { if (synth) synth.cancel(); if (player) player.pause(); } catch (e) {} } });
   const gb = $("grownups");
   gb.addEventListener("pointerdown", holdStart); ["pointerup", "pointerleave", "pointercancel"].forEach(ev => gb.addEventListener(ev, holdEnd));
   gb.addEventListener("contextmenu", e => e.preventDefault());
@@ -644,7 +719,7 @@ function init() {
   $("adult-reset").addEventListener("click", onReset);
   setBusy(false);
 }
-window.__game = { S, ROUNDS, get mem() { return mem; } };
+window.__game = { S, ROUNDS, player, get mem() { return mem; } };
 init();
 })();
 </script>
