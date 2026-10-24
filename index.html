@@ -350,7 +350,9 @@ const AUDIO = {"WAAAH! A pancake monster! Oh. It's you!": "audio/00.mp3", "Hic! 
 const NUMCLIP = { "2": "two", "4": "four", "8": "eight" };
 const player = (typeof Audio !== "undefined") ? new Audio() : null;
 let primed = false;
-function primeAudio() { if (primed || !player) return; primed = true; Object.values(AUDIO).forEach(src => { try { const a = new Audio(); a.preload = "auto"; a.src = src; } catch (e) {} }); }
+function primeAudio() { if (primed || !player) return; primed = true; setTimeout(() => Object.values(AUDIO).forEach(src => { try { const a = new Audio(); a.preload = "auto"; a.src = src; } catch (e) {} }), FAST ? 0 : 3500); }
+const FIRST_LINE = "Zzz... is somebody there? Zzz... tap me... zzz...";
+if (player && !FAST) { try { player.preload = "auto"; player.src = AUDIO[FIRST_LINE]; player.load(); } catch (e) {} }
 function clipFor(text) { return AUDIO[text] || AUDIO[NUMCLIP[text]] || null; }
 function speakSynth(text, fin, est) {
   if (S.muted || !synth) { setTimeout(fin, Math.max(900, est * 0.7)); return; }
