@@ -176,6 +176,14 @@ button:focus-visible{outline:4px solid var(--focus);outline-offset:3px}
 .tile.tap{animation:tap .28s ease-out}
 @keyframes tap{0%{transform:none}35%{transform:scale(.88,.84)}70%{transform:scale(1.07)}100%{transform:none}}
 .slot.pop{animation:pop .3s ease-out}
+/* M1.8: Pip "reads" each slot while cooking (PBS Step It Out trace); verdict badges after checking (Toy Maker test checks) */
+.slot{position:relative}
+#app.locked .slot.reading{opacity:1}
+.slot.reading{box-shadow:0 0 0 5px var(--focus);transform:scale(1.06);transition:transform .15s}
+.slot.reading::before{content:"";position:absolute;left:50%;top:-24px;margin-left:-12px;border:12px solid transparent;border-top:16px solid #f0a500;border-bottom:0}
+.badge{position:absolute;top:-12px;right:-12px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;box-shadow:0 3px 0 rgba(31,45,71,.2);border:3px solid #fff;z-index:2;animation:enter .35s cubic-bezier(.34,1.56,.64,1) both}
+.badge svg{width:20px;height:20px}
+.badge.ok{background:var(--good)} .badge.bad{background:#d64545}
 @keyframes pop{0%{transform:none}40%{transform:scale(1.12)}100%{transform:none}}
 .nudge{animation:nudge .45s ease-in-out}
 @keyframes nudge{0%,100%{transform:none}20%{transform:translateX(-6px) rotate(-3deg)}40%{transform:translateX(6px) rotate(3deg)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
@@ -332,7 +340,7 @@ button:focus-visible{outline:4px solid var(--focus);outline-offset:3px}
     <p style="margin:0 0 6px">This is a test build. Pip's words and mistakes are pre-written, and Pip's voice is pre-recorded. No live SI (AI model) runs, and nothing leaves this device. The log below is saved only in this browser.</p>
     <div class="sum" id="adult-sum"></div>
     <div class="tbl" id="adult-tbl"></div>
-    <div class="row"><button id="adult-close">Close</button><button class="danger" id="adult-reset">Erase all data</button></div>
+    <div class="row"><button id="adult-close">Close</button><button id="adult-sfx" aria-pressed="false">Sound effects: on</button><button class="danger" id="adult-reset">Erase all data</button></div>
   </div>
 </div>
 
@@ -356,7 +364,7 @@ function initSfx() {
   } catch (e) { AC = null; }
 }
 function tone(type, f0, f1, dur, vol = 1, delay = 0) {
-  if (!AC || S.muted) return;
+  if (!AC || S.muted || mem.sfxOff) return;
   try {
     const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
     o.type = type; o.frequency.setValueAtTime(f0, t); if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
@@ -365,7 +373,7 @@ function tone(type, f0, f1, dur, vol = 1, delay = 0) {
   } catch (e) {}
 }
 function hiss(dur, freq, vol, delay = 0) {
-  if (!AC || S.muted) return;
+  if (!AC || S.muted || mem.sfxOff) return;
   try {
     const t = AC.currentTime + delay, n = Math.floor(AC.sampleRate * dur), buf = AC.createBuffer(1, n, AC.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
@@ -601,7 +609,10 @@ function renderSlots() {
     s.classList.toggle("filled", v !== null);
     s.classList.toggle("glow", S.glowCat === cat);
     s.innerHTML = v === null ? `<span class="q">?</span><span class="cap">${CAPS[cat]}</span>` : tileIcon(cat, v) + (isNum(cat, v) ? "" : `<span class="w">${WORD(v)}</span>`) + `<span class="cap">${CAPS[cat]}</span>`;
-    s.setAttribute("aria-label", CAPS[cat] + ": " + (v === null ? "empty" : WORD(v)));
+    s.setAttribute("aria-label", CAPS[cat] + ": " + (v === null ? "empty" : WORD(v)) + (S.verdict && S.verdict[cat] ? (S.verdict[cat] === "ok" ? ", right" : ", needs fixing") : ""));
+    if (S.verdict && S.verdict[cat]) s.insertAdjacentHTML("beforeend", S.verdict[cat] === "ok"
+      ? '<span class="badge ok" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M4 10.5l4 4 8-9" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'
+      : '<span class="badge bad" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M10 4v7" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/><circle cx="10" cy="15.5" r="1.9" fill="#fff"/></svg></span>');
   }
   document.querySelectorAll(".tile").forEach(t => {
     const cat = t.dataset.cat, v = S.req[cat];
@@ -609,6 +620,8 @@ function renderSlots() {
     t.classList.toggle("wiggle", S.wiggle && S.wiggle.cat === cat && String(S.wiggle.val) === t.dataset.val);
   });
 }
+function setReading(cat) { ["count", "size", "top"].forEach(c => $("slot-" + c).classList.toggle("reading", c === cat)); if (cat) SFX.tick(); }
+function setVerdict(bad) { S.verdict = {}; ["count", "size", "top"].forEach(c => { S.verdict[c] = bad.includes(c) ? "bad" : "ok"; }); renderSlots(); }
 function setBusy(b) { S.busy = b; $("askbtn").disabled = b || S.phase !== "ask"; $("replay").disabled = b; $("app").classList.toggle("locked", b || S.phase !== "ask"); }
 function setMood(m) { const p = $("pip"); p.classList.remove("m-sleep", "m-wide", "m-happy", "m-oops", "m-think"); p.classList.add("m-" + m); $("zzz").hidden = m !== "sleep"; }
 async function anim(cls, ms) { const p = $("pip"); p.classList.remove("jump", "spin", "flop", "shake", "bounce", "startle"); void p.offsetWidth; p.classList.add(cls); await wait(ms); p.classList.remove(cls); }
@@ -652,7 +665,7 @@ function explainLine(p, req, g) {
 function newLog() { return { when: new Date().toISOString(), round: S.round + 1, goal: describe(goal()), attempts: 0, maxHint: 0, misfires: [], cwRound: !!goal().cw, cwCaught: null, missedChecks: 0, caught: 0 }; }
 
 async function startRound(i) {
-  S.round = i; S.req = { count: null, size: null, top: null }; S.cwUsed = false; S.fails = 0; S.glowCat = null; S.wiggle = null; S.cooked = null;
+  S.round = i; S.verdict = {}; S.req = { count: null, size: null, top: null }; S.cwUsed = false; S.fails = 0; S.glowCat = null; S.wiggle = null; S.cooked = null;
   S.log = newLog(); markWrong([]); renderProgress(); renderSlots();
   const gp = $("goal-pic"); gp.innerHTML = ""; gp.appendChild(makeStack(goal())); fitGoal();
   $("plate-wrap").innerHTML = ""; $("plate-wrap").appendChild(makeStack({}, { empty: true }));
@@ -661,6 +674,7 @@ async function startRound(i) {
   enterStagger(order.filter(Boolean), 40); if (!NOFX()) [0, 1, 2, 3].forEach(k => setTimeout(SFX.tick, 120 + k * 160));
   await intro(i);
   S.phase = "ask"; setBusy(false);
+  S.touched = false; S.idleNudges = 0; armStartIdle();
 }
 
 /* Shrink the goal picture until the whole stack, top topping included, fits below the "Make this" label. */
@@ -712,22 +726,25 @@ async function cook() {
   const pw = $("plate-wrap"); pw.innerHTML = ""; const st = makeStack({}, { empty: true }); pw.appendChild(st);
   const pan = $("pan"); if (!NOFX()) pan.classList.add("hot"); SFX.sizzle(1.6);
   setMood("think"); await say("Okay! Cooking...");
+  setReading("size"); await wait(NOFX() ? 10 : 650);
   if (c.size === "giant") {
     st.classList.add("grow"); SFX.boing();
     addCake(st, "giant");
     await say("Bigger... BIGGER... BIGGEST!");
   } else if (c.count > 8) {
+    setReading("count");
     for (let i = 0; i < c.count; i++) { addCake(st, c.size); if (i % 3 === 0) SFX.plop(); await wait(110); }
     await say("One, two, three, four... LOTS!");
     st.classList.add("wobble"); await wait(1200); st.classList.remove("wobble"); st.classList.add("topple"); SFX.boing(); await wait(1100);
   } else {
+    setReading("count");
     for (let i = 0; i < c.count; i++) {
       const el = addCake(st, c.size); flyFromPan(el); restart(pan, "toss"); SFX.whoosh(); if (!NOFX()) setTimeout(SFX.plop, 390); else SFX.plop();
       await voice(NUMW[i + 1]); await wait(150);
     }
   }
   pan.classList.remove("hot");
-  addTops(st, c.top); await wait(NOFX() ? 400 : 650);
+  setReading("top"); addTops(st, c.top); await wait(NOFX() ? 400 : 750); setReading(null);
   setMood("happy"); await anim("bounce", 1000);
   await say(c.cwError ? "Perfect! All done! Did I get it right?" : "Ta-da! Did I get it right?");
   S.phase = "check"; $("askbtn").hidden = true; $("check").hidden = false; setBusy(false);
@@ -755,7 +772,7 @@ async function onThumb(up) {
     S.log.cwCaught = !up; S.log.misfires.push("pip:confident");
     setMood("oops");
     await say(c.count === 1 && g.count === 2 ? "Oops! Only ONE! The picture has two... and I was SO sure!" : "Hmm. Let's check with the picture...");
-    const st = $("plate-wrap").querySelector(".stack"); addCake(st, c.size); addTops(st, c.top);
+    const st = $("plate-wrap").querySelector(".stack"); addCake(st, c.size); addTops(st, c.top); setVerdict([]);
     await say(up ? "Helpers can make mistakes, even when they sound sure. Always check!" : "Good checking! Helpers can be wrong, even when they sound sure.");
     return success();
   }
@@ -769,7 +786,7 @@ async function explain() {
   S.fails = (S.fails || 0) + 1;
   const level = Math.min(3, S.fails); S.log.maxHint = Math.max(S.log.maxHint, level);
   SFX.boing(); setMood("wide"); await anim("startle", NOFX() ? 10 : 700); setMood("oops");
-  markWrong(probs.map(x => x.cat));
+  markWrong(probs.map(x => x.cat)); setVerdict(probs.map(x => x.cat));
   probs.forEach(x => restart($("panel-" + x.cat).querySelector(".tile.on") || $("slot-" + x.cat), "nudge"));
   await say(explainLine(p, S.req, g), { thought: true });
   if (level >= 2) {
@@ -779,6 +796,17 @@ async function explain() {
   if (level >= 3) { S.wiggle = { cat: p.cat, val: g[p.cat] }; renderSlots(); await say("Let's do it together. Tap the wiggly tile!", { thought: true }); }
   S.phase = "ask"; setMood("happy"); setBusy(false);
   S.pendingCat = p.cat; armIdle(p.cat);
+}
+/* If the child hasn't touched anything ~15 s into a round, Pip re-points at the three tile groups (twice at most).
+   Instruction only, not an answer hint, so it is not logged as a hint level. Seen in PBS and Khan Academy Kids: idle re-prompts every ~8-14 s. */
+function armStartIdle() {
+  clearTimeout(S.startIdle);
+  S.startIdle = setTimeout(async () => {
+    if (S.phase !== "ask" || S.touched) return;
+    if (S.busy) return armStartIdle();
+    S.idleNudges++; await tileRecap();
+    if (S.idleNudges < 2 && !S.touched) armStartIdle();
+  }, FAST ? 60 : 15000);
 }
 function armIdle(cat) {
   clearTimeout(S.idle);
@@ -791,7 +819,7 @@ function armIdle(cat) {
 }
 
 async function success() {
-  setBusy(true); S.phase = "done"; clearTimeout(S.idle); S.pendingCat = null; S.glowCat = null; S.wiggle = null; renderSlots();
+  setBusy(true); S.phase = "done"; clearTimeout(S.idle); S.pendingCat = null; S.glowCat = null; S.wiggle = null; setVerdict([]);
   setMood("happy"); anim("jump", 700); SFX.tada(); setTimeout(SFX.sparkle, 300);
   sparkles($("plate-wrap").querySelector(".stack") || $("plate-wrap"), $("goal"), 12);
   const g = goal();
@@ -816,7 +844,7 @@ function showShelf() { const sh = $("shelf"); sh.innerHTML = ""; mem.shelf.slice
 /* ---------- events ---------- */
 function onTile(cat, v) {
   if (S.busy || S.phase !== "ask") return;
-  S.req[cat] = v;
+  S.req[cat] = v; S.touched = true; clearTimeout(S.startIdle); if (S.verdict) delete S.verdict[cat];
   $("panel-" + cat).classList.remove("wrong");
   if (S.glowCat === cat && String(v) === String(goal()[cat])) S.glowCat = null;
   if (S.wiggle && S.wiggle.cat === cat && String(v) === String(S.wiggle.val)) S.wiggle = null;
@@ -824,8 +852,8 @@ function onTile(cat, v) {
   const tl = document.querySelector(`.tile[data-cat="${cat}"][data-val="${String(v)}"]`); restart(tl, "tap"); flyTile(tl, $("slot-" + cat));
   if (S.pendingCat && !S.glowCat) armIdle(S.pendingCat);
 }
-function onSlot(cat) { if (S.busy || S.phase !== "ask" || S.req[cat] === null) return; S.req[cat] = null; renderSlots(); SFX.tick(); restart($("slot-" + cat), "pop"); }
-async function onAsk() { if (S.busy || S.phase !== "ask") return; clearTimeout(S.idle); S.pendingCat = null; S.phase = "cook"; setBusy(true); markWrong([]); S.glowCat = null; S.wiggle = null; renderSlots(); await cook(); }
+function onSlot(cat) { if (S.busy || S.phase !== "ask" || S.req[cat] === null) return; S.req[cat] = null; if (S.verdict) delete S.verdict[cat]; renderSlots(); SFX.tick(); restart($("slot-" + cat), "pop"); }
+async function onAsk() { if (S.busy || S.phase !== "ask") return; clearTimeout(S.idle); clearTimeout(S.startIdle); S.touched = true; S.pendingCat = null; S.phase = "cook"; setBusy(true); markWrong([]); S.glowCat = null; S.wiggle = null; S.verdict = {}; renderSlots(); await cook(); }
 
 async function wake() {
   setBusy(true); S.phase = "waking"; initSfx(); SFX.boing();
@@ -900,6 +928,8 @@ function init() {
   gb.addEventListener("contextmenu", e => e.preventDefault());
   $("adult-close").addEventListener("click", () => { $("adult").hidden = true; });
   $("adult-reset").addEventListener("click", onReset);
+  const sfxBtn = () => { $("adult-sfx").textContent = "Sound effects: " + (mem.sfxOff ? "off" : "on"); $("adult-sfx").setAttribute("aria-pressed", String(!!mem.sfxOff)); };
+  $("adult-sfx").addEventListener("click", () => { mem.sfxOff = !mem.sfxOff; save(); sfxBtn(); }); sfxBtn();
   setBusy(false);
 }
 window.__game = { S, ROUNDS, player, get mem() { return mem; } };
